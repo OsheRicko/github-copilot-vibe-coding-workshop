@@ -1,0 +1,413 @@
+openapi: 3.0.1
+info:
+  title: Simple Social Media API
+  version: 1.0.0
+  description: |
+    API for a basic social networking service providing CRUD for posts,
+    comments on posts, and a like/unlike system. Designed per the PRD
+    for educational and MVP use cases.
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+tags:
+  - name: Posts
+    description: Post management
+  - name: Comments
+    description: Comment management
+  - name: Likes
+    description: Like and unlike posts
+paths:
+  /posts:
+    get:
+      tags: [Posts]
+      summary: List posts
+      description: Returns all recent posts.
+      operationId: listPosts
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Posts]
+      summary: Create post
+      description: Create a new post.
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPost'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /posts/{postId}:
+    get:
+      tags: [Posts]
+      summary: Get post
+      description: Retrieve a single post by ID.
+      operationId: getPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      tags: [Posts]
+      summary: Update post
+      description: Update an existing post's content (requires username for ownership validation).
+      operationId: updatePost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePost'
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Posts]
+      summary: Delete post
+      description: Delete a post by ID.
+      operationId: deletePost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /posts/{postId}/comments:
+    get:
+      tags: [Comments]
+      summary: List comments for a post
+      description: Returns all comments associated with the specified post.
+      operationId: listComments
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Comments]
+      summary: Create comment
+      description: Create a new comment on the specified post.
+      operationId: createComment
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewComment'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /posts/{postId}/comments/{commentId}:
+    get:
+      tags: [Comments]
+      summary: Get specific comment
+      description: Retrieve a single comment by ID for the specified post.
+      operationId: getComment
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/CommentId'
+      responses:
+        '200':
+          description: Comment retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      tags: [Comments]
+      summary: Update comment
+      description: Update an existing comment (requires username for ownership validation).
+      operationId: updateComment
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/CommentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateComment'
+      responses:
+        '200':
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Comments]
+      summary: Delete comment
+      description: Delete a comment by ID for the specified post.
+      operationId: deleteComment
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/CommentId'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /posts/{postId}/likes:
+    post:
+      tags: [Likes]
+      summary: Like a post
+      description: Like the specified post (requires username).
+      operationId: likePost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LikeRequest'
+      responses:
+        '200':
+          description: Post liked; returns updated post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Likes]
+      summary: Unlike a post
+      description: Remove a like from the specified post (requires username).
+      operationId: unlikePost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LikeRequest'
+      responses:
+        '200':
+          description: Post unliked; returns updated post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: BAD_REQUEST
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid input for required field 'content'.
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional additional error context
+      required: [code, message]
+    Identifier:
+      type: string
+      description: Resource identifier
+      pattern: '^[A-Za-z0-9_-]+$'
+      example: p_123abc
+    Timestamp:
+      type: string
+      format: date-time
+      example: '2025-05-30T12:34:56Z'
+    PostBase:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: alice
+        content:
+          type: string
+          minLength: 1
+          example: "Hello Contoso community!"
+      required: [username, content]
+    Post:
+      allOf:
+        - $ref: '#/components/schemas/PostBase'
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            createdAt:
+              $ref: '#/components/schemas/Timestamp'
+            updatedAt:
+              $ref: '#/components/schemas/Timestamp'
+            likes:
+              type: integer
+              format: int32
+              minimum: 0
+              example: 3
+          required: [id, createdAt, updatedAt, likes]
+    NewPost:
+      $ref: '#/components/schemas/PostBase'
+    UpdatePost:
+      $ref: '#/components/schemas/PostBase'
+    CommentBase:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: bob
+        content:
+          type: string
+          minLength: 1
+          example: "Nice post!"
+      required: [username, content]
+    Comment:
+      allOf:
+        - $ref: '#/components/schemas/CommentBase'
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            postId:
+              $ref: '#/components/schemas/Identifier'
+            createdAt:
+              $ref: '#/components/schemas/Timestamp'
+            updatedAt:
+              $ref: '#/components/schemas/Timestamp'
+          required: [id, postId, createdAt, updatedAt]
+    NewComment:
+      $ref: '#/components/schemas/CommentBase'
+    UpdateComment:
+      $ref: '#/components/schemas/CommentBase'
+    LikeRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: alice
+      required: [username]
+  parameters:
+    PostId:
+      name: postId
+      in: path
+      description: Post identifier
+      required: true
+      schema:
+        $ref: '#/components/schemas/Identifier'
+    CommentId:
+      name: commentId
+      in: path
+      description: Comment identifier
+      required: true
+      schema:
+        $ref: '#/components/schemas/Identifier'
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NoContent:
+      description: No content
